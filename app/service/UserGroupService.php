@@ -5,7 +5,7 @@ namespace app\service;
 use app\config\Database;
 use app\model\Group;
 
-class UserGroup
+class UserGroupService
 {
     private static $instance;
     private $db;

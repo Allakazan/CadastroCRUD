@@ -13,4 +13,5 @@ require  'app/model/Group.php';
 
 //Service
 require  'app/service/UserService.php';
-require  'app/service/UserGroup.php';
+require  'app/service/UserGroupService.php';
+require  'app/service/ValidationService.php';

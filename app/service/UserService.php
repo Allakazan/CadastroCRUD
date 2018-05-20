@@ -3,7 +3,8 @@
 namespace app\service;
 
 use app\config\Database;
-use app\service\UserGroup;
+use app\service\UserGroupService;
+use app\model\User;
 
 class UserService
 {
@@ -24,6 +25,16 @@ class UserService
         return self::$instance;
     }
 
+    public function userExists($userId) {
+        $sql = 'select 1 as user from user where id = :id';
+        $sth = $this->db->prepare($sql);
+
+        $sth->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $sth->execute();
+
+        return array_key_exists('user', $sth->fetch(\PDO::FETCH_ASSOC));
+    }
+
     public function get($user)
     {
 
@@ -34,7 +45,7 @@ class UserService
         $sth->execute();
 
         $userData = $sth->fetch(\PDO::FETCH_ASSOC);
-        $userData['groups'] = UserGroup::getInstance()->getByUserId($user);
+        $userData['groups'] = UserGroupService::getInstance()->getByUserId($user);
 
         $user->setAllParams($userData);
 
@@ -45,8 +56,17 @@ class UserService
     {
         $sql = 'select id, name, last_name from user';
         $sth = $this->db->query($sql);
+        $userArray = [];
 
-        return $sth->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $userData) {
+            $user = new User();
+            $user->setAllParams($userData);
+            $user->setGroups(UserGroupService::getInstance()->getByUserId($user));
+
+            $userArray[] = $user;
+        }
+
+        return $userArray;
     }
 
 }

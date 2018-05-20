@@ -4,6 +4,7 @@ namespace app\controller;
 
 use app\model\User;
 use app\service\UserService;
+use app\service\ValidationService;
 
 class UserController extends Controller
 {
@@ -25,6 +26,14 @@ class UserController extends Controller
 
     public function get($id)
     {
+
+        if (!ValidationService::getInstance()->isNumeric($id)) {
+            return 'invalid';
+        }
+        if (!UserService::getInstance()->userExists($id)) {
+            return 'non exists';
+        }
+
         $user = new User();
         $user->setId($id);
 
@@ -35,7 +44,13 @@ class UserController extends Controller
 
     public function list()
     {
-        return UserService::getInstance()->list();
+        $userData = [];
+
+        foreach(UserService::getInstance()->list() as $user) {
+            $userData[] = $user->toArray();
+        }
+
+        return $userData;
     }
 
     public function update($id, $fields = array())

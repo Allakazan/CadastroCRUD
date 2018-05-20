@@ -79,10 +79,18 @@ class User
      * @param $userArray
      */
     public function setAllParams($userArray) {
-        $this->setId($userArray['id']);
-        $this->setName($userArray['name']);
-        $this->setLastName($userArray['last_name']);
-        $this->setGroups($userArray['groups']);
+        if (array_key_exists('id', $userArray)) {
+            $this->setId($userArray['id']);
+        }
+        if (array_key_exists('name', $userArray)) {
+            $this->setName($userArray['name']);
+        }
+        if (array_key_exists('last_name', $userArray)) {
+            $this->setLastName($userArray['last_name']);
+        }
+        if (array_key_exists('groups', $userArray)) {
+            $this->setGroups($userArray['groups']);
+        }
     }
 
     /**

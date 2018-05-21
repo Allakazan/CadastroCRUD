@@ -19,6 +19,8 @@ class Database
 
         try {
             $this->conn = new \PDO("mysql:host=" . $this->host . ";dbname=" . $this->db, $this->user, $this->pass);
+            $this->conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
         } catch (PDOException $exc) {
             echo $exc->getMessage();
         }
@@ -30,6 +32,10 @@ class Database
 
     public function prepare($sql) {
         return $this->conn->prepare($sql);
+    }
+
+    public function lastInsertId() {
+        return $this->conn->lastInsertId();
     }
 
 }

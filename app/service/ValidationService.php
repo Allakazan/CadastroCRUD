@@ -27,4 +27,12 @@ class ValidationService
         return filter_var($value, FILTER_VALIDATE_INT);
     }
 
+    public function validateMinMaxChars($value, $min, $max) {
+        return ($min <= strlen($value)) && (strlen($value) <= $max);
+    }
+
+    public function sanitizeString ($value) {
+        return filter_var($value, FILTER_SANITIZE_STRING);
+    }
+
 }

@@ -32,7 +32,7 @@ class UserService
         $sth->bindValue(':id', $userId, \PDO::PARAM_INT);
         $sth->execute();
 
-        return array_key_exists('user', $sth->fetch(\PDO::FETCH_ASSOC));
+        return $sth->fetch(\PDO::FETCH_ASSOC) ==! false;
     }
 
     public function get($user)
@@ -67,6 +67,138 @@ class UserService
         }
 
         return $userArray;
+    }
+
+    public function insert($user)
+    {
+        try {
+            $sql = "
+            INSERT INTO user
+            (name, last_name)
+            VALUES(:name, :lastName);
+            ";
+            $sth = $this->db->prepare($sql);
+
+            $sth->bindValue(':name', $user->getName(), \PDO::PARAM_STR);
+            $sth->bindValue(':lastName', $user->getName(), \PDO::PARAM_STR);
+
+            $sth->execute();
+            $id = $this->db->lastInsertId();
+
+            $sqlGroups = "
+            INSERT INTO user_has_group
+            (user_id, group_id)
+            VALUES(:userId, :groupId);
+            ";
+
+            foreach ($user->getGroups() as $group) {
+
+                $sthGroups = $this->db->prepare($sqlGroups);
+
+                $sthGroups->bindValue(':userId', $id, \PDO::PARAM_INT);
+                $sthGroups->bindValue(':groupId', $group->getId(), \PDO::PARAM_STR);
+
+                $sthGroups->execute();
+            }
+
+            return $id;
+        }
+        catch(\PDOException $e) {
+            //var_dump($e->getMessage());
+            return false;
+        }
+    }
+
+    public function update($user)
+    {
+        try {
+            $sql = "
+                UPDATE user
+                SET name=:name, last_name=:lastName, update_date=now()
+                WHERE id=:id;
+            ";
+            $sth = $this->db->prepare($sql);
+            $sth->bindValue(':name', $user->getName(), \PDO::PARAM_INT);
+            $sth->bindValue(':lastName', $user->getLastName(), \PDO::PARAM_INT);
+            $sth->bindValue(':id', $user->getId(), \PDO::PARAM_INT);
+
+            $sth->execute();
+
+            $sqlGroups = "
+            INSERT INTO user_has_group
+            (user_id, group_id)
+            VALUES(:userId, :groupId);
+            ";
+            $sqlDelGroup = "
+            DELETE FROM user_has_group 
+            WHERE user_id = :userId and group_id = :groupId
+            ";
+
+            $userGroups = UserGroupService::getInstance()->getByUserId($user);
+            $groupIds = [];
+
+            foreach ($user->getGroups() as $group) {
+                $groupIds[] = $group->getId();
+                if (!UserGroupService::getInstance()->userHasGroup($user->getId(), $group->getId())) {
+
+                    $sthGroups = $this->db->prepare($sqlGroups);
+
+                    $sthGroups->bindValue(':userId', $user->getId(), \PDO::PARAM_INT);
+                    $sthGroups->bindValue(':groupId', $group->getId(), \PDO::PARAM_STR);
+
+                    $sthGroups->execute();
+                }
+            }
+
+            foreach($userGroups as $userGroup) {
+                if (!in_array($userGroup->getId(), $groupIds)) {
+
+                    $sthDelGroups = $this->db->prepare($sqlDelGroup);
+
+                    $sthDelGroups->bindValue(':userId', $user->getId(), \PDO::PARAM_INT);
+                    $sthDelGroups->bindValue(':groupId', $userGroup->getId(), \PDO::PARAM_STR);
+
+                    $sthDelGroups->execute();
+                }
+            }
+
+            return $user->getId();
+        }
+        catch(\PDOException $e) {
+            //var_dump($e->getMessage());
+            return false;
+        }
+    }
+
+    public function remove($user) {
+        try{
+            $userGroups = UserGroupService::getInstance()->getByUserId($user);
+            $sqlDelGroup = "
+            DELETE FROM user_has_group 
+            WHERE user_id = :userId and group_id = :groupId
+            ";
+
+            foreach($userGroups as $userGroup) {
+                $sthDelGroups = $this->db->prepare($sqlDelGroup);
+
+                $sthDelGroups->bindValue(':userId', $user->getId(), \PDO::PARAM_INT);
+                $sthDelGroups->bindValue(':groupId', $userGroup->getId(), \PDO::PARAM_STR);
+
+                $sthDelGroups->execute();
+            }
+
+            $sql = 'DELETE FROM user WHERE id = :id';
+            $sth = $this->db->prepare($sql);
+
+            $sth->bindValue(':id', $user->getId(), \PDO::PARAM_INT);
+            $sth->execute();
+
+            return true;
+        }
+        catch (\PDOException $e) {
+            //var_dump($e->getMessage());
+            return false;
+        }
     }
 
 }

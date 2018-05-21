@@ -104,6 +104,7 @@ class User
         }
 
         return [
+            'id' => $this->getId(),
             'name' => $this->getName(),
             'lastName' => $this->getLastName(),
             'groups' => $groups
